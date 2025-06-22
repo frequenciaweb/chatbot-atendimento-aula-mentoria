@@ -1,5 +1,13 @@
 # Chatbot de Atendimento com Múltiplas IAs
 
+> 📚 **Projeto desenvolvido durante a mentoria do [Curso de Desenvolvimento Focado em IA](https://hotmart.com/pt-br/marketplace/produtos/curso-de-desenvolvimento-focado-em-ia/F99940338H)**
+>
+> 🚀 **Adquira o curso e ganhe mentoria para seus projetos particulares!**
+>
+> O curso ensina como turbinar sua carreira de desenvolvedor utilizando ferramentas de IA como GitHub Copilot, ChatGPT, Claude, Cursor e muito mais. São 20 horas de conteúdo prático ao vivo para automatizar tarefas, programar com mais eficiência e aumentar significativamente sua produtividade.
+>
+> 🎯 [**Clique aqui para saber mais sobre o curso**](https://hotmart.com/pt-br/marketplace/produtos/curso-de-desenvolvimento-focado-em-ia/F99940338H)
+
 Sistema de chatbot inteligente com integração a múltiplos agentes de IA (ChatGPT, Claude, Modelos Locais via LM Studio).
 
 ## Tecnologias
