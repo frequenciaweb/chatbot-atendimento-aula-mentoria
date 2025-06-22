@@ -1,0 +1,71 @@
+# Requisito de Correção: 21/06/2025 - Extração e Validação de Nome e Telefone na Conversa Inicial do Chatbot
+
+## Contexto
+
+Durante a primeira interação do cliente com o chatbot, foi identificada uma falha crítica: o modelo de IA não reconheceu corretamente os dados informados (nome e telefone), respondendo com um texto genérico e interpretativo.
+
+Este requisito tem como objetivo garantir que o sistema consiga identificar, validar e confirmar os dados essenciais do cliente (nome completo e telefone celular) de forma precisa, antes de iniciar o atendimento.
+
+---
+
+## Requisitos Funcionais (RF)
+
+**RF01. Extração Direta de Dados na Conversa**
+- O sistema deve analisar cada mensagem recebida do cliente durante a fase de identificação.
+- Quando identificar uma mensagem contendo um nome completo e um número de telefone válido, deve:
+  - Registrar os dados na base.
+  - Confirmar com o cliente, exibindo uma mensagem do tipo:  
+    “Perfeito, [nome]! Número [telefone] registrado. Como posso te ajudar?”
+
+**RF02. Validação de Dados**
+- A entrada deve ser considerada válida se:
+  - Contiver um número de telefone no formato brasileiro (regex: `\b\d{2}9\d{8}\b`).
+  - Contiver pelo menos duas palavras seguidas, interpretadas como nome completo.
+- A mensagem deve ser validada **sem exigir frases fixas** (ex: “meu nome é”).
+
+**RF03. Confirmação antes de prosseguir**
+- Após detectar nome e telefone, o sistema deve perguntar:
+  - “Você confirma que seu nome é [nome] e seu telefone é [telefone]? (sim/não)”
+- Somente após resposta positiva o sistema seguirá com a interação principal.
+
+**RF04. Persistência Condicional**
+- O cadastro do cliente só deve ocorrer após a confirmação explícita.
+- Caso o cliente responda “não”, o sistema deve solicitar novamente os dados.
+
+**RF05. Mensagens Claras e Repetitivas**
+- Se o cliente enviar mensagens sem os dados esperados, o bot deve repetir a solicitação com frases alternativas:
+  - “Desculpe, preciso que me diga seu nome completo e telefone celular antes de continuar.”
+  - “Pode me informar seu nome e telefone para iniciarmos o atendimento?”
+
+---
+
+## Requisitos Não Funcionais (RN)
+
+**RN01. Tolerância Linguística**
+- O sistema deve funcionar mesmo que o cliente informe os dados em frases mistas, como:
+  - “me chamo Paula 61999998888”
+  - “Paulo Roberto meu número é 61993123456”
+  - “61999998888 José da Silva”
+
+**RN02. Identificação Regular de Telefone**
+- O reconhecimento do telefone deve utilizar expressão regular com validação de DDD e estrutura numérica (11 dígitos).
+
+**RN03. Prompt de IA Ajustado**
+- O modelo de IA utilizado na etapa de identificação deve receber um prompt especializado.
+- O prompt deve instruir o modelo a reconhecer, extrair e confirmar os dados antes de prosseguir.
+
+---
+
+## Exemplo de Prompt para IA
+
+```plaintext
+Você é um assistente de atendimento. Seu primeiro objetivo é capturar e confirmar o nome completo e o número de telefone celular do usuário antes de continuar o atendimento.
+
+Regras:
+- Quando o usuário informar nome e telefone, confirme com a frase:
+  "Você confirma que seu nome é [nome] e seu telefone é [telefone]? (sim/não)"
+- Após confirmação positiva, responda com:
+  "Perfeito, [nome]! Número [telefone] registrado. Como posso te ajudar?"
+- Não continue o atendimento até que esses dados tenham sido confirmados.
+- Se a entrada for ambígua, peça novamente os dados com clareza.
+- Nunca assuma que o nome ou número estão corretos sem confirmação.

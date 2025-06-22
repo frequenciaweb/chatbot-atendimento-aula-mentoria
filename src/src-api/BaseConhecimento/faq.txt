@@ -1,0 +1,11 @@
+P: O OmniChatBot funciona offline?
+R: Sim, ao utilizar modelos locais via LM Studio, ele pode operar sem conexão externa.
+
+P: O sistema suporta múltiplos atendimentos ao mesmo tempo?
+R: Sim. Cada cliente é identificado por telefone, e o contexto da conversa é mantido separadamente.
+
+P: Posso usar com o ChatGPT e Claude?
+R: Sim. O sistema já vem com integração nativa para ambos os serviços, além de suporte a modelos locais.
+
+P: O sistema pode ser customizado?
+R: Sim. Todo o código é modular e permite customizações para diferentes empresas ou eventos.

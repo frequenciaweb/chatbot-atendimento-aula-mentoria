@@ -1,0 +1,5 @@
+O OmniChatBot é um sistema de chatbot inteligente que permite atender múltiplos clientes simultaneamente, com controle de contexto por sessão e integração com diferentes modelos de IA.
+
+Desenvolvido em Angular 19 (frontend) e .NET 8.0 (backend), ele usa banco SQLite e suporta modelos como ChatGPT, Claude e modelos locais no LM Studio.
+
+O foco do OmniChatBot é fornecer uma experiência de atendimento personalizada, com registro de histórico por cliente, identificação automática e limitação de escopo.

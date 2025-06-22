@@ -1,0 +1,47 @@
+# Requisito de Correção: Substituição de Placeholders no Prompt de Identificação
+
+## Contexto
+
+Durante a primeira interação com o chatbot, os placeholders [nome completo] e [número de telefone] foram exibidos literalmente na resposta do modelo de IA. Isso ocorreu porque os valores informados pelo usuário não foram substituídos antes do envio do prompt para o modelo.
+
+Este requisito estabelece as regras para corrigir esse comportamento e garantir que a mensagem seja processada corretamente com os dados reais antes de enviar para qualquer agente de IA.
+
+---
+
+## Requisitos Funcionais (RF)
+
+**RF01. Substituição de Placeholders**
+- O backend deve substituir dinamicamente os seguintes placeholders nos prompts antes de enviá-los ao modelo:
+  - `[nome completo]` → nome informado pelo cliente
+  - `[número de telefone]` → número informado pelo cliente
+- Essa substituição deve ocorrer **antes** da chamada HTTP para o endpoint da IA (local ou externo).
+
+**RF02. Controle Condicional da Substituição**
+- Caso os dados ainda não estejam disponíveis (nome ou telefone), os placeholders devem ser omitidos ou a etapa de substituição deve ser ignorada.
+- O prompt só deve ser usado com placeholders substituídos se os dados já tiverem sido reconhecidos e validados.
+
+**RF03. Confirmação Personalizada**
+- Após a substituição, o backend deve montar a seguinte resposta e enviá-la ao usuário:
+  - “Você confirma que seu nome é Paulo Roberto e seu telefone é 61993123456? (sim/não)”
+
+**RF04. Separação da Lógica de Prompt**
+- O template do prompt deve ser mantido em arquivo separado ou estrutura constante, permitindo fácil reutilização com `.Replace("[nome completo]", nome)` e `.Replace("[número de telefone]", telefone)`.
+
+---
+
+## Requisitos Não Funcionais (RN)
+
+**RN01. Segurança**
+- A substituição deve garantir que nenhum dado do cliente seja injetado sem validação (evitar injection em APIs externas).
+
+**RN02. Compatibilidade com todos os modelos**
+- A lógica de substituição deve funcionar tanto com modelos locais (LM Studio) quanto externos (OpenAI, Claude), mantendo o mesmo padrão de entrada.
+
+**RN03. Mensagens Claras**
+- A resposta final enviada ao cliente deve ser humanizada e conter os dados substituídos de forma limpa e sem colchetes.
+
+---
+
+## Observação Final
+
+Nenhuma resposta da IA deve conter placeholders não substituídos. Essa substituição é responsabilidade exclusiva do backend antes de interagir com qualquer modelo.

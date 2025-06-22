@@ -1,0 +1,213 @@
+# Requisito de Sistema: 21/06/2025 - Chatbot de Atendimento com Múltiplas IAs – Fluxo Conversacional com Identificação no Chat
+
+## Contexto Geral
+
+O sistema é um chatbot de atendimento inteligente, com integração a múltiplos agentes de IA (ChatGPT, Claude, Modelos Locais via LM Studio). 
+Deve permitir que diferentes clientes (Usuários) acessem simultaneamente o sistema web sem compartilhamento de contexto entre eles. 
+A interface será feita em Angular 19 e o backend em .NET 8.0 com banco SQLite.
+Todo o fluxo será feito de forma conversacional, sem telas intermediárias de cadastro.
+
+---
+
+
+
+## Requisitos Funcionais (RF)
+
+**RF01. Abertura do Chat**
+- O modelo deve estar aberto assim que o cliente acessar a interface.
+- Nenhuma tela de cadastro deve ser exibida.
+- O cliente poderá digitar diretamente uma mensagem inicial (ex: "Oi", "Boa tarde") e o modelo escolhido vai responder a mensagem.
+- sempre a interação será feita por um modelo de inteligência artificial. 
+
+**RF02. Identificação Conversacional**
+- Após a primeira mensagem, o modelo deve responder solicitando dois dados: nome completo e telefone celular.
+- ele deve ser capaz de identificar esses dois textos durante a conversa com o usuário e só prosseguir no fluxo quando 
+o usuário confirmar que seu nome e telefone estão corretos. 
+- Esses dados serão enviados como parte da conversa e tratados via backend.
+- O cliente deve responder na mesma janela de chat com nome e telefone.
+
+**RF03. Validação e Registro do Cliente**
+- O sistema deve verificar se o número de telefone informado já está registrado.
+  - Se estiver, deve buscar o cliente existente e carregadr seu histórico de mensagens no máximo de 24 horas atrás, se não entende que é uma nova solicitação.
+  - Se não estiver, deve criar um novo registro com os dados informados na tabela de clientes.
+- O cliente será identificado unicamente pelo telefone celular.
+
+**RF04. Continuação da Conversa**
+- Após a identificação, o modelo deve responder com uma saudação personalizada (ex: “Perfeito, Paulo! Como posso te ajudar?”).
+- A partir desse ponto, a conversa segue normalmente, com o bot interagindo com base no modelo de IA selecionado.
+
+**RF05. Histórico de Conversa**
+- Toda troca de mensagens (cliente ↔ modelo) deve ser salva na tabela `cliente_chats`.
+- O histórico anterior deve ser recuperado e exibido logo após a identificação do cliente com maximo de 24 horas.
+
+**RF06. Estrutura de Dados**
+- Tabela `clientes`:
+  - id
+  - nome
+  - telefone
+  - data_criacao
+- Tabela `cliente_chats`:
+  - id
+  - cliente_id
+  - texto
+  - origem ("cliente" ou "bot")
+  - data_criacao
+
+**RF07. Integração com Múltiplos Modelos de IA**
+- O sistema deve suportar troca de agentes de IA durante a conversa.
+- O frontend deve permitir a seleção de qual IA irá responder (ChatGPT, Claude, ou modelos locais).
+- coloque tratamento de erro adquado para exibir mensagens de erro 400 vinda do backend. 
+- mensagens 500 deve exibir mensagem padrão "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.".
+- Toda mensagem enviada ao backend deve conter:
+  - Texto da mensagem
+  - Telefone do cliente
+  - Nome (apenas se não identificado ainda)
+  - Modelo de IA selecionado
+
+**RF08. Envio de Mensagem com Contexto**
+- A cada nova mensagem, o sistema deve enviar o histórico da conversa anterior para manter o contexto da IA maximo 24 horas de histórico.
+- Caso o cliente altere a IA durante a conversa, o contexto atual deve ser reaproveitado na nova IA.
+
+**RF09. Listagem de IAs Disponíveis**
+- O frontend deve consumir o endpoint  do backend https://localhost:5001/api/Chat/modelos que deve retornar a lista de modelos locais disponíveis em `http://192.168.0.150:1234/v1/models` para listar os modelos locais disponíveis.
+{
+  "data": [
+    {
+      "id": "phi-3-mini-4k-instruct",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "deepseek-r1-distill-qwen-1.5b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "whisper-medium",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "deepseek-r1-distill-qwen-7b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "gemma-2b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "mistral-7b-instruct-v0.2",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "text-embedding-nomic-embed-text-v1.5",
+      "object": "model",
+      "owned_by": "organization_owner"
+    }
+  ],
+  "object": "list"
+}
+- Caso não seja possível carregar os modelos vindo do backend não deve inserir modelos no frontend. 
+- Além disso, deve incluir manualmente:
+  - ChatGPT: `gpt-4o`, `gpt-4.1`, `o4-mini`, 'gpt-3.5'
+  - Claude: `claude-3-sonnet`, `claude-3-haiku`, 'claude-4-sonnet'
+
+---
+
+## Requisitos Não Funcionais (RN)
+
+**RN01. Conversa 100% no Chat**
+- Nenhuma etapa do processo deve exigir o preenchimento de formulário fora da interface de chat.
+- A coleta de dados e validação será feita apenas via diálogo com o modelo.
+
+**RN02. Código Simples e Direto**
+- A API será implementada de forma direta, com ações no controller e uso de DTOs, sem separação por camadas.
+
+**RN03. Sessões Separadas**
+- O sistema deve garantir que cada cliente tenha sua própria sessão e que os contextos não se misturem.
+
+**RN04. Armazenamento Local**
+- Toda a persistência será feita em banco SQLite local.
+
+**RN05. Pronto para Produção**
+- O sistema deverá permitir build e execução sem erros em ambiente local para desenvolvimento e testes.
+
+**RN06. Instale Swagger**
+- o bacekend deve ter o Swagger instalado para documentar os endpoints do controller.
+
+---
+
+
+## Tarefas Técnicas Obrigatórias de Inicialização do Projeto
+
+⚠️ As tarefas a seguir devem ser executadas obrigatoriamente antes de qualquer implementação de funcionalidade.  
+⚠️ Não podem ser ignoradas, puladas, alteradas ou descartadas por nenhum motivo.  
+⚠️ São etapas mínimas exigidas para inicializar corretamente o projeto e organizar os arquivos conforme a estrutura definida.  
+
+### 🔧 Criação do Projeto Angular
+- Criar o projeto base Angular com o seguinte comando:
+  - `ng new src-web`
+- Gerar o componente da página principal de chat:
+  - `ng g c pages/chat`
+- Gerar o serviço responsável pela integração com a API:
+  - `ng g s services/chat`
+
+### 🔧 Criação do Projeto .NET (API)
+- Criar o projeto base da Web API com o seguinte comando:
+  - `dotnet new webapi -n src-api --use-controllers`
+- Criar o arquivo `.gitignore` do backend:
+  - `dotnet new gitignore`
+- Criar o arquivo `.soluction` do backend:
+  - `dotnet sln ChatBot.sln`  
+  -  add src-api/src-api.csproj
+
+Essas etapas são mandatórias e devem ser executadas integralmente antes da codificação de qualquer controller, DTO, model ou componente Angular.
+
+---
+
+
+#Organização
+- Crie o código dentro das pasta src e documente tudo na pasta docs/execucao enumernado cada interação. 
+
+## Estrutura do Projeto
+
+src/
+ ├── README.md                               ✅ Documentação geral do projeto
+ ├── src-api/                                ✅ Projeto Backend (.NET Core 8 + SQLite)
+ │   ├── .gitignore                          ✅ Ignora arquivos desnecessários no versionamento do backend
+ │   └── NomeProjeto.src/                    ✅ Projeto principal da API
+ │       ├── Controllers/                    ✅ Controllers da API (ações diretas, sem camadas)
+ │       ├── Models/                         ✅ Modelos de entidades (Cliente, ClienteChat)
+ │       ├── DTOs/                           ✅ Objetos de transferência de dados
+ │       ├── appsettings.json                ✅ Configurações de IAs e banco
+ │       └── Program.cs                      ✅ Configuração e inicialização do projeto
+ │
+ ├── src-web/                                ✅ Projeto Frontend (Angular 19)
+ │   ├── .gitignore                          ✅ Ignora arquivos desnecessários no versionamento do frontend
+ │   ├── package.json                        ✅ Configurações de dependências e scripts
+ │   └── src/app/
+ │       ├── pages/
+ │       │   └── chat-atendimento/           ✅ Página principal do chat (não há incluir/editar/cadastro)
+ │       │       └── conversar/              ✅ Tela principal do chat e controle da sessão
+ │       ├── models/                         ✅ Interfaces dos DTOs (cliente, mensagem, resposta)
+ │       ├── components/                     ✅ Componentes reutilizáveis (ex: chat-box, combo IA)
+ │       ├── services/                       ✅ Serviços Angular para integração com API
+ │       ├── interceptors/                   ✅ Interceptadores HTTP (ex: autenticação futura, loaders)
+ │       ├── util/                           ✅ Funções auxiliares e helpers
+ │       └── environments/                   ✅ Arquivos de configuração de ambiente
+ │
+ └── docs/                                   ✅ Documentação técnica
+     ├── requisitos/                         ✅ Arquivos com RF e RN organizados por funcionalidade
+     ├── diagramas/                          ✅ Diagramas de arquitetura e fluxos
+     └── testes/                             ✅ Casos de teste e evidências de validação
+
+---
+
+## Observações Finais
+
+- Nenhum fluxo externo ao chat deve existir para identificação ou cadastro.
+- Todo o processo é feito exclusivamente via troca de mensagens com o bot.
+- O telefone celular é a única chave usada para identificar e recuperar a sessão do cliente.

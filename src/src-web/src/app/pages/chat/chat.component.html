@@ -1,0 +1,82 @@
+<div class="chat-container">
+  <!-- Header do Chat -->
+  <div class="chat-header">
+    <div class="header-title">
+      <h2>Atendimento Inteligente</h2>
+      <span class="status-indicator" [class.online]="!carregando">
+        {{ carregando ? 'Digitando...' : 'Online' }}
+      </span>
+    </div>
+    
+    <!-- Seletor de IA -->
+    <div class="model-selector" *ngIf="modelosDisponiveis.length > 0">
+      <label for="modelSelect">IA:</label>
+      <select 
+        id="modelSelect" 
+        [(ngModel)]="modeloSelecionado" 
+        (change)="trocarModelo()"
+        [disabled]="carregando">
+        <option *ngFor="let modelo of modelosDisponiveis" [value]="modelo.id">
+          {{ modelo.nome }} ({{ modelo.tipo }})
+        </option>
+      </select>
+    </div>
+    
+    <!-- Aviso quando não há modelos -->
+    <div class="model-selector" *ngIf="modelosDisponiveis.length === 0">
+      <span class="no-models-warning">⚠️ Backend indisponível</span>
+    </div>
+  </div>
+
+  <!-- Área de Mensagens -->
+  <div class="chat-messages" #chatContainer>
+    <div *ngFor="let mensagem of mensagens" class="message-wrapper" [ngClass]="{'cliente': mensagem.origem === 'cliente', 'bot': mensagem.origem === 'bot'}">
+      <div class="message">
+        <div class="message-text">{{ mensagem.texto }}</div>
+        <div class="message-time">{{ mensagem.dataCriacao | date:'HH:mm' }}</div>
+      </div>
+    </div>
+
+    <!-- Indicador de digitação -->
+    <div *ngIf="carregando" class="message-container bot-message">
+      <div class="message-bubble typing-indicator">
+        <div class="typing-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área de Entrada -->
+  <div class="chat-input-area">
+    <!-- Exibir erro se houver -->
+    <div *ngIf="erro" class="error-message">
+      {{ erro }}
+    </div>
+
+    <div class="input-container">
+      <textarea 
+        [(ngModel)]="novaMensagem"
+        (keydown)="onKeyPress($event)"
+        placeholder="Digite sua mensagem..."
+        rows="1"
+        [disabled]="carregando"
+        class="message-input"></textarea>
+      
+      <button 
+        (click)="enviarMensagem()"
+        [disabled]="carregando || !novaMensagem.trim()"
+        class="send-button">
+        <span *ngIf="!carregando">Enviar</span>
+        <span *ngIf="carregando" class="loading-spinner">⏳</span>
+      </button>
+    </div>
+
+    <!-- Informações do estado -->
+    <div class="chat-info" *ngIf="carregando">
+      Digitando...
+    </div>
+  </div>
+</div>
