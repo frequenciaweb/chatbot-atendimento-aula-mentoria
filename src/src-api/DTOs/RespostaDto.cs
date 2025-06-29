@@ -12,6 +12,7 @@ namespace src_api.DTOs
         public bool ContaExcluida { get; set; } = false;
         public object? DadosTemporarios { get; set; }
         public List<ChatMensagemDto>? Historico { get; set; }
+        public bool DadosConfirmados { get;  set; }
     }
 
     public class ChatMensagemDto

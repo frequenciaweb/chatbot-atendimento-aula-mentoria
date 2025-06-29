@@ -75,7 +75,7 @@ namespace src_api.Controllers
             // Cenário 1: Usuário enviou dados para identificação. Pedir confirmação.
             if (!string.IsNullOrEmpty(dadosExtraidos.Telefone))
             {
-                return await ExecutarCenario01(mensagem, dadosExtraidos);
+                return ExecutarCenario01(mensagem, dadosExtraidos);
             }
 
             // Cenário 2: Usuário confirmou ("sim") e o frontend enviou os dados temporários. Criar o cliente.
@@ -132,26 +132,69 @@ Mensagem do Usuário: " + texto;
 
         private async Task<(string? Nome, string? Telefone)> ExtrairDadosIdentificacaoPorIA(MensagemDto mensagem)
         {
-            string prompt = @"Você é um atendente da empresa Omni Inovações.
-Sua tarefa é extrair com precisão o nome e o telefone do cliente da mensagem enviada";
+            string prompt = @"Você é um assistente da empresa Omni Inovações. 
+IMPORTANTE: Sua tarefa é extrair APENAS o nome e telefone que estão explicitamente mencionados na mensagem do cliente.
+NUNCA invente ou adicione dados que não estão na mensagem original.
+Se não encontrar nome ou telefone na mensagem, retorne strings vazias.
+Responda APENAS com o JSON solicitado, sem explicações ou pensamentos.";
 
-            string tarefa = @"identifique o nome e o telefone " + mensagem.Texto;
+            string tarefa = @"Analise a mensagem do cliente e extraia APENAS os dados que estão explicitamente mencionados:
+Mensagem do cliente: """ + mensagem.Texto + @"""
+
+Regras:
+1. Use APENAS os dados que estão na mensagem
+2. NÃO invente nomes ou telefones
+3. Se não encontrar um dado, deixe vazio
+4. Retorne APENAS o JSON no formato: {""nome"": ""nome_extraido"", ""telefone"": ""telefone_extraido""}
+
+Exemplo de resposta quando encontrar dados: {""nome"": ""JOSE DA SILVA"", ""telefone"": ""61999988887""}
+Exemplo de resposta quando NÃO encontrar dados: {""nome"": """", ""telefone"": """"}";
 
             var mensagemSolicitacao = await ProcessarMensagemIA(tarefa, mensagem.ModeloIA, new List<ChatMensagemDto>(), prompt);
 
-            var partes = mensagemSolicitacao.Split('\n');
-            string nome = "";
-            string telefone = "";
-
-            if (partes.Length == 2)
+            // Limpar a resposta da IA removendo markdown e espaços extras
+            mensagemSolicitacao = mensagemSolicitacao.Replace("```json", "").Replace("```", "").Trim();
+            
+            // Tentar extrair JSON válido da resposta
+            var jsonMatch = Regex.Match(mensagemSolicitacao, @"\{[^{}]*""nome""[^{}]*""telefone""[^{}]*\}", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (jsonMatch.Success)
             {
-                nome = partes[0].Replace("Nome:", "").Replace("****", "").Trim();
-                var t = partes[1].Replace("Telefone:", "").Replace("****", "").Trim();                 
-                string apenasNumeros = Regex.Replace(t, @"\D", "");
-                telefone = apenasNumeros;
+                mensagemSolicitacao = jsonMatch.Value;
             }
 
-            return (nome, telefone);
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    AllowTrailingCommas = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                var dadosJson = JsonSerializer.Deserialize<DTODadosCadastrais>(mensagemSolicitacao, options);
+                if (dadosJson == null)
+                {
+                    return (string.Empty, string.Empty);
+                }
+
+                if (string.IsNullOrEmpty(dadosJson.Nome) || (string.IsNullOrEmpty(dadosJson.Nome)))
+                {
+                    return (string.Empty, string.Empty);
+                }
+
+                return (dadosJson.Nome, dadosJson.Telefone);
+            }
+            catch (JsonException)
+            {
+                // Se a deserialização falhar, tentar extrair os dados manualmente
+                var nomeMatch = Regex.Match(mensagemSolicitacao, @"""nome""\s*:\s*""([^""]*)""", RegexOptions.IgnoreCase);
+                var telefoneMatch = Regex.Match(mensagemSolicitacao, @"""telefone""\s*:\s*""([^""]*)""", RegexOptions.IgnoreCase);
+                
+                var nome = nomeMatch.Success ? nomeMatch.Groups[1].Value : string.Empty;
+                var telefone = telefoneMatch.Success ? telefoneMatch.Groups[1].Value : string.Empty;
+                
+                return (nome, telefone);
+            }
         }
 
         private async Task<IActionResult> ExecutarCenario04(MensagemDto mensagem, (string? Nome, string? Telefone) dadosExtraidos)
@@ -198,8 +241,8 @@ Aguardo seu retorno!
         {
             var cliente = new Cliente
             {
-                Nome = mensagem.Nome,
-                Telefone = mensagem.Telefone,
+                Nome = mensagem.Nome ?? string.Empty,
+                Telefone = mensagem.Telefone ?? string.Empty,
             };
 
             _context.Clientes.Add(cliente);
@@ -225,7 +268,7 @@ Aguardo seu retorno!
         /// <param name="mensagem"></param>
         /// <param name="dadosExtraidos"></param>
         /// <returns></returns>
-        private async Task<IActionResult> ExecutarCenario01(MensagemDto mensagem, (string? Nome, string? Telefone) dadosExtraidos)
+        private IActionResult ExecutarCenario01(MensagemDto mensagem, (string? Nome, string? Telefone) dadosExtraidos)
         {
             var templateConfirmacao = ObterTemplateConfirmacao();
             var respostaConfirmacao = SubstituirPlaceholders(templateConfirmacao, dadosExtraidos.Nome, dadosExtraidos.Telefone);
